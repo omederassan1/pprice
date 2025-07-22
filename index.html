@@ -98,7 +98,7 @@
       <input type="text" id="searchInput" placeholder="أدخل كود المادة أو الباركود...">
       <div class="buttons">
         <button id="searchButton"> 🔍  بــحــث</button>
-        <button id="scanButton">📷</button>
+        <button id="scanButton">📷 مسح باركود</button>
       </div>
     </div>
 
@@ -111,7 +111,7 @@
         <input type="text" id="entryCode" placeholder="كود المادة" readonly>
         <input type="number" id="entryQty" placeholder="عدد القطع" min="1" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
         <input type="text" id="entryPrice" placeholder="السعر" oninput="formatPrice(this)">
-        <button onclick="submitEntry()">📤 إرسال</button>
+        <button onclick="submitEntry()">📤 إرسال البيانات</button>
       </div>
     </div>
   </div>
@@ -119,9 +119,7 @@
   <script>
     const PRICE_API_URL = 'https://script.google.com/macros/s/AKfycbyY0_u9CdEloibv2o02m_HQZAROXZGN9bWWuk47CUY6S166G5fsdfwq0TBmiej8OuBK/exec';
     const STOCK_API_URL = 'https://script.google.com/macros/s/AKfycbxOetGhckv30w3hfbPLLFUxBOT6bOSSPrDNgqdqaER2vqMXKYb7Bvz1eDsJY8AiiCuYKg/exec';
-
-    // هنا استبدل الرابط هذا بالرابط الصحيح لتطبيق Google Apps Script الخاص بالارسال
-    const SUBMIT_API_URL = 'https://script.google.com/macros/s/AKfycbzpax5TJkL5lk60Fm6qRnHVfs5bVI_Ljr7GdTiJcGL6vpPP5mBZ_rybsSC6XHQy0A/exec';
+    const SUBMIT_API_URL = 'https://script.google.com/macros/s/AKfycbxA5xpgSeC3zBVRKu5kgwNgFHjyyZuTw7yiWy0lgczWr89Rle1Br7YYygc99SCLnA/exec?cache=' + Date.now();
 
     let html5QrCode;
 
@@ -157,14 +155,22 @@
       document.getElementById("entryCode").value = code;
       resultDiv.innerHTML = "<p class='loading'>⏳ جاري البحث...</p>";
 
-      const [priceData, stockData] = await Promise.all([fetchPrices(code), fetchStock(code)]);
+      try {
+        const [priceData, stockData] = await Promise.all([fetchPrices(code), fetchStock(code)]);
+        displayResults(priceData, stockData);
+      } catch (error) {
+        resultDiv.innerHTML = `<p class='error'>⚠️ حدث خطأ أثناء البحث: ${error.message}</p>`;
+      }
+    }
 
+    function displayResults(priceData, stockData) {
+      const resultDiv = document.getElementById("result");
       let html = "";
 
       if (priceData && priceData.status === 'success') {
-        html += `<h3>${priceData.name}</h3>`;
-        html += `<p><strong>سعر الجملة:</strong> ${priceData.wholesale}</p>`;
-        html += `<p><strong>سعر المفرد:</strong> ${priceData.retail}</p>`;
+        html += `<h3>${priceData.name || 'غير معروف'}</h3>`;
+        html += `<p><strong>سعر الجملة:</strong> ${priceData.wholesale || 'غير متوفر'}</p>`;
+        html += `<p><strong>سعر المفرد:</strong> ${priceData.retail || 'غير متوفر'}</p>`;
       } else {
         html += "<p class='error'>⚠️ لم يتم العثور على الأسعار.</p>";
       }
@@ -174,7 +180,7 @@
         html += `<h4>الرصيد في المستودعات:</h4>`;
         html += `<table><tr><th>المستودع</th><th>الرصيد</th></tr>`;
         stockData.forEach(item => {
-          html += `<tr><td>${item.warehouse}</td><td>${item.balance}</td></tr>`;
+          html += `<tr><td>${item.warehouse || 'غير معروف'}</td><td>${item.balance || '0'}</td></tr>`;
           total += parseFloat(item.balance) || 0;
         });
         html += `<tr><th>المجموع</th><th>${total}</th></tr>`;
@@ -207,7 +213,7 @@
         if (devices && devices.length) {
           const camera = devices.find(device => device.label.toLowerCase().includes('back')) || devices[0];
 
-          html5QrCode.start(
+          await html5QrCode.start(
             camera.id,
             { fps: 10, qrbox: 250 },
             (decodedText) => {
@@ -223,7 +229,7 @@
         }
       } catch (err) {
         console.error("فشل تشغيل الكاميرا:", err);
-        cameraContainer.innerHTML = "<p class='error'>📷 تعذر تشغيل الكاميرا.</p>";
+        cameraContainer.innerHTML = `<p class='error'>📷 تعذر تشغيل الكاميرا: ${err.message}</p>`;
       }
     }
 
@@ -242,35 +248,55 @@
         return;
       }
 
-      const data = { code: code, quantity: qty, price: price };
+      const data = { 
+        code: code, 
+        quantity: qty, 
+        price: price,
+        timestamp: new Date().toISOString()
+      };
 
       try {
         const response = await fetch(SUBMIT_API_URL, {
           method: "POST",
           body: JSON.stringify(data),
-          headers: { "Content-Type": "application/json" }
+          headers: { 
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          },
+          redirect: "follow"
         });
 
-        const result = await response.json();
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || "فشل في الإرسال");
+        }
 
+        const result = await response.json();
+        
         if (result.status === "success") {
           alert("✅ تم إرسال البيانات بنجاح!");
-          document.getElementById("searchInput").value = "";
-          document.getElementById("entryCode").value = "";
           document.getElementById("entryQty").value = "";
           document.getElementById("entryPrice").value = "";
-          document.getElementById("result").innerHTML = "";
+          searchAll(); // تحديث النتائج تلقائياً
         } else {
-          alert("❌ فشل في الإرسال. حاول مرة أخرى.");
+          throw new Error(result.message || "خطأ غير معروف");
         }
       } catch (error) {
-        console.error("خطأ في الإرسال:", error);
-        alert("⚠️ حدث خطأ أثناء الإرسال.");
+        console.error("Error:", error);
+        alert(`❌ فشل في الإرسال: ${error.message}`);
       }
     }
 
+    // أحداث الأزرار
     document.getElementById("searchButton").addEventListener("click", searchAll);
     document.getElementById("scanButton").addEventListener("click", startBarcodeScanner);
+
+    // تمكين إرسال النموذج بالزر Enter
+    document.getElementById("searchInput").addEventListener("keypress", function(e) {
+      if (e.key === "Enter") {
+        searchAll();
+      }
+    });
   </script>
 </body>
 </html>
