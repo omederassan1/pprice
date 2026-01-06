@@ -46,6 +46,10 @@ button {
   color: #fff;
   cursor: pointer;
 }
+button:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+}
 
 .price-box {
   display: inline-block;
@@ -63,6 +67,11 @@ button {
   border: 2px solid #28a745;
   color: #28a745;
   background: #f4fff7;
+}
+.plumber {
+  border: 2px solid #ffc107;
+  color: #856404;
+  background: #fff8e1;
 }
 
 table {
@@ -94,8 +103,7 @@ th { background: #f0f0f0; }
 
 <body>
 <div class="container">
-  <h1>شركة أومیدی راسان</h1>
-  <h2>فرع بغداد - الأسعار والمخزون</h2>
+  <h1>شركة أومیدي راسان-بغداد</h1>
 
   <div class="search-box">
     <input type="text" id="searchInput" placeholder="أدخل كود المادة أو الباركود">
@@ -118,67 +126,30 @@ th { background: #f0f0f0; }
 </div>
 
 <script>
-/* روابط API */
-const PRICE_API_URL = 'https://script.google.com/macros/s/AKfycbyY0_u9CdEloibv2o02m_HQZAROXZGN9bWWuk47CUY6S166G5fsdfwq0TBmiej8OuBK/exec';
+/* ===================== API ===================== */
+const PRICE_API_URL = 'https://script.google.com/macros/s/AKfycbwlxKnBrvLBFlZEiP6auRQdI0laM1TuGeNWEGh0th3PvjJv5VYFzW1bTD_qxGvypb9F/exec';
 const STOCK_API_URL = 'https://script.google.com/macros/s/AKfycbxOetGhckv30w3hfbPLLFUxBOT6bOSSPrDNgqdqaER2vqMXKYb7Bvz1eDsJY8AiiCuYKg/exec';
 
-/* مفاتيح التخزين اليومي */
-const DAILY_PRICE_KEY = "daily_prices_v1";
-const DAILY_PRICE_DATE_KEY = "daily_prices_date_v1";
-let dailyPriceCache = {};
+/* 🔴 رابط Web App الخاص بالطلبيات */
+const ORDER_API_URL = 'https://script.google.com/macros/s/AKfycbwTvo73prHKcLpfQwynW4H3ocIvBsJnDlUST0EaAyq33VYDZVHR6tTtzA6Hi5awmA/exec';
 
-/* تحميل الأسعار مرة واحدة يوميًا */
-async function loadDailyPrices() {
-  const today = new Date().toISOString().slice(0,10);
-  const savedDate = localStorage.getItem(DAILY_PRICE_DATE_KEY);
-
-  if (savedDate === today) {
-    const cached = localStorage.getItem(DAILY_PRICE_KEY);
-    if (cached) {
-      dailyPriceCache = JSON.parse(cached);
-      console.log("⚡ أسعار اليوم من الهاتف");
-      return;
-    }
-  }
-
-  console.log("⬇️ تحميل أسعار اليوم...");
-  const res = await fetch(`${PRICE_API_URL}?all=true&sheet=Sheet2`);
-  const data = await res.json();
-
-  dailyPriceCache = {};
-  data.forEach(item => {
-    dailyPriceCache[item.code] = item;
-  });
-
-  localStorage.setItem(DAILY_PRICE_KEY, JSON.stringify(dailyPriceCache));
-  localStorage.setItem(DAILY_PRICE_DATE_KEY, today);
-  console.log("✅ تم تحميل الأسعار اليومية");
-}
-
-window.addEventListener("load", loadDailyPrices);
-
-/* جلب السعر من الكاش */
+/* ===================== الأسعار ===================== */
 async function fetchPrices(code) {
-  if (dailyPriceCache[code]) {
-    return dailyPriceCache[code];
-  }
-  const res = await fetch(`${PRICE_API_URL}?code=${code}&sheet=Sheet2`);
+  const res = await fetch(`${PRICE_API_URL}?code=${code}`);
   return await res.json();
 }
 
-/* جلب المخزون */
 async function fetchStock(code) {
   const res = await fetch(`${STOCK_API_URL}?code=${code}`);
   return await res.json();
 }
 
-/* تنسيق السعر */
 function formatPrice(input) {
   let v = input.value.replace(/[^\d]/g,'');
   input.value = v ? Number(v).toLocaleString('en-US') : '';
 }
 
-/* البحث */
+/* ===================== البحث ===================== */
 async function searchAll() {
   const code = searchInput.value.trim();
   if (!code) return;
@@ -187,50 +158,69 @@ async function searchAll() {
   orderSection.style.display = "none";
 
   const priceData = await fetchPrices(code);
-  let html = "";
 
-  if (priceData) {
-    html += `<h3>${priceData.name}</h3>
-      <p>سعر الجملة:
-        <span class="price-box wholesale">
-          ${Number(priceData.wholesale).toLocaleString('en-US')}
-        </span>
-      </p>
-      <p>سعر المفرد:
-        <span class="price-box retail">
-          ${Number(priceData.retail).toLocaleString('en-US')}
-        </span>
-      </p>`;
-
-    itemCode.value = code;
-    quantity.value = "";
-    price.value = "";
-    orderSection.style.display = "block";
-  } else {
-    html = "<p class='error'>لا توجد أسعار</p>";
+  if (!priceData || priceData.status !== 'success') {
+    result.innerHTML = "<p class='error'>لا توجد أسعار</p>";
+    return;
   }
 
-  result.innerHTML = html;
+  result.innerHTML = `
+    <h3>${priceData.name}</h3>
+    <p>جملة بغداد:
+      <span class="price-box wholesale">${(priceData.wholesale||0).toLocaleString('en-US')}</span>
+    </p>
+    <p>جملة معرض:
+      <span class="price-box retail">${(priceData.retail||0).toLocaleString('en-US')}</span>
+    </p>
+    <p>جملة سباك:
+      <span class="price-box plumber">${(priceData.plumber||0).toLocaleString('en-US')}</span>
+    </p>
+  `;
 
-  const stock = await fetchStock(code);
-  const baghdad = stock?.find(s => s.warehouse.includes("بغداد"));
-
-  if (baghdad) {
-    result.innerHTML += `
-      <h4>مخزون مستودع بغداد</h4>
-      <table>
-        <tr><th>المستودع</th><th>الرصيد</th></tr>
-        <tr>
-          <td>بغداد</td>
-          <td>${Number(baghdad.balance).toLocaleString('en-US')}</td>
-        </tr>
-      </table>`;
-  } else {
-    result.innerHTML += "<p class='error'>لا يوجد رصيد في بغداد</p>";
-  }
+  itemCode.value = code;
+  quantity.value = "";
+  price.value = "";
+  orderSection.style.display = "block";
 }
 
+/* ===================== إرسال الطلب (مصَحَّح) ===================== */
+submitOrder.onclick = async function () {
+  if (this.disabled) return;
+
+  if (!quantity.value || !price.value) {
+    alert("يرجى إدخال الكمية والسعر");
+    return;
+  }
+
+  this.disabled = true;
+  this.innerText = "⏳ جاري إرسال الطلب...";
+  this.style.background = "#6c757d";
+
+  try {
+    const formData = new FormData();
+    formData.append("code", itemCode.value);
+    formData.append("quantity", quantity.value);
+    formData.append("price", price.value.replace(/,/g,''));
+
+    await fetch(ORDER_API_URL, {
+      method: "POST",
+      body: formData
+    });
+
+    this.innerText = "✅ تم إرسال الطلب";
+    this.style.background = "#28a745";
+
+  } catch (e) {
+    this.innerText = "❌ فشل الإرسال";
+    this.style.background = "#dc3545";
+    this.disabled = false;
+  }
+};
+
+/* ===================== الأحداث ===================== */
 searchButton.onclick = searchAll;
+scanButton.onclick = startBarcodeScanner;
 </script>
+
 </body>
 </html>
