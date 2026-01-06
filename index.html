@@ -1,286 +1,153 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>بحث المواد</title>
-
 <style>
-body {
-  font-family: 'Segoe UI', Tahoma;
-  padding: 20px;
-  background: #f0f2f5;
-}
-.container {
-  max-width: 800px;
-  margin: auto;
-  background: #fff;
-  padding: 25px;
-  border-radius: 12px;
-  box-shadow: 0 0 15px rgba(0,0,0,.1);
-}
+body { font-family:'Segoe UI', Tahoma; padding:20px; background:#f0f2f5; }
+.container { max-width:800px; margin:auto; background:#fff; padding:25px; border-radius:12px; box-shadow:0 0 15px rgba(0,0,0,.1); }
 h1,h2 { text-align:center; }
-
-.search-box {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-input {
-  padding: 15px;
-  font-size: 18px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-}
-.buttons {
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-}
-button {
-  padding: 14px 25px;
-  font-size: 18px;
-  border: none;
-  border-radius: 8px;
-  background: #ff0000;
-  color: #fff;
-  cursor: pointer;
-}
-button:disabled {
-  background: #6c757d;
-  cursor: not-allowed;
-}
-
-.price-box {
-  display: inline-block;
-  padding: 8px 14px;
-  border-radius: 8px;
-  font-weight: bold;
-  font-size: 18px;
-}
-.wholesale {
-  border: 2px solid #dc3545;
-  color: #dc3545;
-  background: #fff5f5;
-}
-.retail {
-  border: 2px solid #28a745;
-  color: #28a745;
-  background: #f4fff7;
-}
-.plumber {
-  border: 2px solid #ffc107;
-  color: #856404;
-  background: #fff8e1;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 10px;
-}
-th, td {
-  border: 1px solid #ccc;
-  padding: 10px;
-  text-align: center;
-}
-th { background: #f0f0f0; }
-
-.loading { font-weight: bold; }
-.error { color: red; font-weight: bold; }
-
-.order-section {
-  margin-top: 25px;
-  padding: 20px;
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  background: #f8f9fa;
-}
+.search-box { display:flex; flex-direction:column; gap:15px; }
+input { padding:15px; font-size:18px; border-radius:8px; border:1px solid #ccc; }
+.buttons { display:flex; gap:10px; justify-content:center; }
+button { padding:14px 25px; font-size:18px; border:none; border-radius:8px; background:#ff0000; color:#fff; cursor:pointer; }
+button:disabled { background:#6c757d; cursor:not-allowed; }
+.price-box { display:inline-block; padding:8px 14px; border-radius:8px; font-weight:bold; font-size:18px; }
+.wholesale { border:2px solid #dc3545; color:#dc3545; background:#fff5f5; }
+.retail { border:2px solid #28a745; color:#28a745; background:#f4fff7; }
+.plumber { border:2px solid #ffc107; color:#856404; background:#fff8e1; }
+table { width:100%; border-collapse:collapse; margin-top:10px; }
+th, td { border:1px solid #ccc; padding:10px; text-align:center; }
+th { background:#f0f0f0; }
+.loading { font-weight:bold; }
+.error { color:red; font-weight:bold; }
+.order-section { margin-top:25px; padding:20px; border:1px solid #ddd; border-radius:10px; background:#f8f9fa; display:none; flex-direction:column; align-items:center; gap:15px; }
+.order-section input { width:80%; text-align:center; font-size:18px; padding:10px; border-radius:8px; border:1px solid #ccc; }
 </style>
-
 <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
-
 <body>
 <div class="container">
-  <h1>شركة أومیدي راسان-بغداد</h1>
+<h1>شركة أومیدی راسان-بغداد</h1>
 
-  <div class="search-box">
-    <input type="text" id="searchInput" placeholder="أدخل كود المادة أو الباركود">
-    <div class="buttons">
-      <button id="searchButton">🔍 بحث</button>
-      <button id="scanButton">📷</button>
-    </div>
-  </div>
-
-  <div id="cameraContainer"></div>
-  <div id="result"></div>
-
-  <div class="order-section" id="orderSection" style="display:none">
-    <h3>إدخال الطلب</h3>
-    <input type="text" id="itemCode" readonly placeholder="كود المادة">
-    <input type="number" id="quantity" placeholder="الكمية">
-    <input type="text" id="price" placeholder="السعر" oninput="formatPrice(this)">
-    <button id="submitOrder">إرسال الطلب</button>
+<div class="search-box">
+  <input type="text" id="searchInput" placeholder="أدخل كود المادة أو الباركود">
+  <div class="buttons">
+    <button id="searchButton">🔍 بحث</button>
+    <button id="scanButton">📷</button>
   </div>
 </div>
 
+<div id="cameraContainer"></div>
+<div id="result"></div>
+
+<div class="order-section" id="orderSection">
+  <h3>إدخال الطلب</h3>
+  <input type="text" id="itemCode" readonly placeholder="كود المادة">
+  <input type="number" id="quantity" placeholder="الكمية" inputmode="numeric">
+  <input type="text" id="price" placeholder="السعر" inputmode="decimal">
+  <button id="submitOrder">إرسال الطلب</button>
+</div>
+</div>
+
 <script>
-/* ===================== API ===================== */
 const PRICE_API_URL = 'https://script.google.com/macros/s/AKfycbwlxKnBrvLBFlZEiP6auRQdI0laM1TuGeNWEGh0th3PvjJv5VYFzW1bTD_qxGvypb9F/exec';
 const STOCK_API_URL = 'https://script.google.com/macros/s/AKfycbxOetGhckv30w3hfbPLLFUxBOT6bOSSPrDNgqdqaER2vqMXKYb7Bvz1eDsJY8AiiCuYKg/exec';
-const ORDER_API_URL = 'https://script.google.com/macros/s/AKfycbxX5hFAPycU6uQsQbxdquc44WKyuN8BUnIHq6JQF8iHPovWPH4Vjul4ye9lsPqung/exec';
+const ORDER_API_URL = 'https://script.google.com/macros/s/AKfycbz9CE2LWLJq1S6hC2OAnplOhpUMt3WAX5EummEaLSXj18TpjSSKPjMc7joNuLpYgw/exec';
 
-/* ===================== الأسعار ===================== */
-async function fetchPrices(code) {
+function formatPrice(input){
+  let val = input.value.replace(/[^\d.]/g,'');
+  input.value = val ? Number(val).toLocaleString('en-US') : '';
+}
+
+async function fetchPrices(code){
   const res = await fetch(`${PRICE_API_URL}?code=${code}`);
   return await res.json();
 }
 
-async function fetchStock(code) {
+async function fetchStock(code){
   const res = await fetch(`${STOCK_API_URL}?code=${code}`);
   return await res.json();
 }
 
-function formatPrice(input) {
-  let v = input.value.replace(/[^\d]/g,'');
-  input.value = v ? Number(v).toLocaleString('en-US') : '';
-}
-
-/* ===================== البحث ===================== */
-async function searchAll() {
+async function searchAll(){
   const code = searchInput.value.trim();
-  if (!code) return;
-
+  if(!code) return;
   result.innerHTML = "<p class='loading'>⏳ جاري البحث...</p>";
   orderSection.style.display = "none";
 
   const priceData = await fetchPrices(code);
-
-  if (!priceData || priceData.status !== 'success') {
-    result.innerHTML = "<p class='error'>لا توجد أسعار</p>";
-    return;
-  }
+  if(!priceData || priceData.status!=='success'){ result.innerHTML="<p class='error'>لا توجد أسعار</p>"; return; }
 
   result.innerHTML = `
     <h3>${priceData.name}</h3>
-    <p>جملة بغداد:
-      <span class="price-box wholesale">${(priceData.wholesale||0).toLocaleString('en-US')}</span>
-    </p>
-    <p>جملة معرض:
-      <span class="price-box retail">${(priceData.retail||0).toLocaleString('en-US')}</span>
-    </p>
-    <p>جملة سباك:
-      <span class="price-box plumber">${(priceData.plumber||0).toLocaleString('en-US')}</span>
-    </p>
+    <p>جملة بغداد: <span class="price-box wholesale">${(priceData.wholesale||0).toLocaleString('en-US')}</span></p>
+    <p>جملة معرض: <span class="price-box retail">${(priceData.retail||0).toLocaleString('en-US')}</span></p>
+    <p>جملة سباك: <span class="price-box plumber">${(priceData.plumber||0).toLocaleString('en-US')}</span></p>
   `;
 
   itemCode.value = code;
   quantity.value = "";
   price.value = "";
-  orderSection.style.display = "block";
+  orderSection.style.display = "flex";
 
   const stock = await fetchStock(code);
   const baghdad = stock?.find(s => s.warehouse.includes("بغداد"));
-  if (baghdad) {
-    result.innerHTML += `
-      <h4>مخزون مستودع بغداد</h4>
-      <table>
-        <tr><th>المستودع</th><th>الرصيد</th></tr>
-        <tr><td>بغداد</td><td>${Number(baghdad.balance).toLocaleString('en-US')}</td></tr>
-      </table>
-    `;
-  } else {
-    result.innerHTML += "<p class='error'>لا يوجد رصيد في بغداد</p>";
-  }
+  if(baghdad){
+    result.innerHTML += `<h4>مخزون مستودع بغداد</h4>
+      <table><tr><th>المستودع</th><th>الرصيد</th></tr>
+      <tr><td>بغداد</td><td>${Number(baghdad.balance).toLocaleString('en-US')}</td></tr></table>`;
+  } else { result.innerHTML += "<p class='error'>لا يوجد رصيد في بغداد</p>"; }
 }
 
-/* ===================== الكاميرا ===================== */
+/* كاميرا */
 let html5QrCode;
-
-function stopCamera() {
-  if (html5QrCode) {
-    html5QrCode.stop().then(() => {
-      cameraContainer.innerHTML = "";
-    }).catch(() => {});
-  }
-}
-
-async function startBarcodeScanner() {
-  cameraContainer.innerHTML = "";
-  html5QrCode = new Html5Qrcode("cameraContainer");
-
+function stopCamera(){ if(html5QrCode) html5QrCode.stop().then(()=>{cameraContainer.innerHTML="";}).catch(()=>{}); }
+async function startBarcodeScanner(){
+  cameraContainer.innerHTML="";
+  html5QrCode=new Html5Qrcode("cameraContainer");
   const devices = await Html5Qrcode.getCameras();
-  if (!devices.length) {
-    cameraContainer.innerHTML = "<p class='error'>لا توجد كاميرا</p>";
-    return;
-  }
-
-  const camera = devices.find(d => d.label.toLowerCase().includes("back")) || devices[0];
-
-  html5QrCode.start(
-    camera.id,
-    { fps: 10, qrbox: 250 },
-    decodedText => {
-      searchInput.value = decodedText;
-      stopCamera();
-      searchAll();
-    }
-  );
+  if(!devices.length){ cameraContainer.innerHTML="<p class='error'>لا توجد كاميرا</p>"; return; }
+  const camera = devices.find(d=>d.label.toLowerCase().includes("back"))||devices[0];
+  html5QrCode.start(camera.id,{fps:10,qrbox:250},decodedText=>{ searchInput.value=decodedText; stopCamera(); searchAll(); });
 }
 
-/* ===================== إرسال الطلب ===================== */
-submitOrder.onclick = async function () {
-  if (this.disabled) return;
+/* إرسال الطلب */
+submitOrder.onclick = async function(){
+  if(this.disabled) return;
+  if(!quantity.value || !price.value){ alert("يرجى إدخال الكمية والسعر"); return; }
 
-  if (!quantity.value || !price.value) {
-    alert("يرجى إدخال الكمية والسعر");
-    return;
-  }
+  this.disabled=true;
+  this.innerText="⏳ جاري إرسال الطلب...";
+  this.style.background="#6c757d";
 
-  this.disabled = true;
-  this.innerText = "⏳ جاري إرسال الطلب...";
-  this.style.background = "#6c757d";
-
-  try {
+  try{
     const formData = new FormData();
-    formData.append("code", itemCode.value);
+    formData.append("code", "'" + itemCode.value); // ' للحفاظ على الصفر
     formData.append("quantity", quantity.value);
     formData.append("price", price.value.replace(/,/g,''));
+    formData.append("date", new Date().toISOString());
 
-    await fetch(ORDER_API_URL, {
-      method: "POST",
-      body: formData
-    });
+    await fetch(ORDER_API_URL, { method:'POST', body: formData });
 
-    // ✅ بعد الإرسال: إعادة الصفحة للوضع الافتراضي
-    this.innerText = "✅ تم إرسال الطلب";
-    this.style.background = "#28a745";
+    this.innerText="✅ تم إرسال الطلب";
+    this.style.background="#28a745";
 
-    // مسح البيانات بعد ثانيتين وإخفاء القسم
-    setTimeout(() => {
-      searchInput.value = "";
-      itemCode.value = "";
-      quantity.value = "";
-      price.value = "";
-      orderSection.style.display = "none";
-      result.innerHTML = "";
-      this.disabled = false;
-      this.innerText = "إرسال الطلب";
-      this.style.background = "#ff0000";
-    }, 2000);
+    setTimeout(()=>{
+      searchInput.value=""; itemCode.value=""; quantity.value=""; price.value="";
+      orderSection.style.display="none"; result.innerHTML="";
+      this.disabled=false; this.innerText="إرسال الطلب"; this.style.background="#ff0000";
+    },2000);
 
-  } catch (e) {
-    this.innerText = "❌ فشل الإرسال";
-    this.style.background = "#dc3545";
-    this.disabled = false;
+  } catch(e){
+    this.innerText="❌ فشل الإرسال"; this.style.background="#dc3545"; this.disabled=false;
   }
-};
+}
 
-/* ===================== الأحداث ===================== */
-searchButton.onclick = searchAll;
-scanButton.onclick = startBarcodeScanner;
+searchButton.onclick=searchAll;
+scanButton.onclick=startBarcodeScanner;
+price.oninput=()=>formatPrice(price);
 </script>
-
 </body>
 </html>
