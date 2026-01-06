@@ -129,9 +129,7 @@ th { background: #f0f0f0; }
 /* ===================== API ===================== */
 const PRICE_API_URL = 'https://script.google.com/macros/s/AKfycbwlxKnBrvLBFlZEiP6auRQdI0laM1TuGeNWEGh0th3PvjJv5VYFzW1bTD_qxGvypb9F/exec';
 const STOCK_API_URL = 'https://script.google.com/macros/s/AKfycbxOetGhckv30w3hfbPLLFUxBOT6bOSSPrDNgqdqaER2vqMXKYb7Bvz1eDsJY8AiiCuYKg/exec';
-
-/* 🔴 رابط Web App الخاص بالطلبيات */
-const ORDER_API_URL = 'https://script.google.com/macros/s/AKfycbwTvo73prHKcLpfQwynW4H3ocIvBsJnDlUST0EaAyq33VYDZVHR6tTtzA6Hi5awmA/exec';
+const ORDER_API_URL = 'https://script.google.com/macros/s/AKfycbxX5hFAPycU6uQsQbxdquc44WKyuN8BUnIHq6JQF8iHPovWPH4Vjul4ye9lsPqung/exec';
 
 /* ===================== الأسعار ===================== */
 async function fetchPrices(code) {
@@ -181,9 +179,57 @@ async function searchAll() {
   quantity.value = "";
   price.value = "";
   orderSection.style.display = "block";
+
+  const stock = await fetchStock(code);
+  const baghdad = stock?.find(s => s.warehouse.includes("بغداد"));
+  if (baghdad) {
+    result.innerHTML += `
+      <h4>مخزون مستودع بغداد</h4>
+      <table>
+        <tr><th>المستودع</th><th>الرصيد</th></tr>
+        <tr><td>بغداد</td><td>${Number(baghdad.balance).toLocaleString('en-US')}</td></tr>
+      </table>
+    `;
+  } else {
+    result.innerHTML += "<p class='error'>لا يوجد رصيد في بغداد</p>";
+  }
 }
 
-/* ===================== إرسال الطلب (مصَحَّح) ===================== */
+/* ===================== الكاميرا ===================== */
+let html5QrCode;
+
+function stopCamera() {
+  if (html5QrCode) {
+    html5QrCode.stop().then(() => {
+      cameraContainer.innerHTML = "";
+    }).catch(() => {});
+  }
+}
+
+async function startBarcodeScanner() {
+  cameraContainer.innerHTML = "";
+  html5QrCode = new Html5Qrcode("cameraContainer");
+
+  const devices = await Html5Qrcode.getCameras();
+  if (!devices.length) {
+    cameraContainer.innerHTML = "<p class='error'>لا توجد كاميرا</p>";
+    return;
+  }
+
+  const camera = devices.find(d => d.label.toLowerCase().includes("back")) || devices[0];
+
+  html5QrCode.start(
+    camera.id,
+    { fps: 10, qrbox: 250 },
+    decodedText => {
+      searchInput.value = decodedText;
+      stopCamera();
+      searchAll();
+    }
+  );
+}
+
+/* ===================== إرسال الطلب ===================== */
 submitOrder.onclick = async function () {
   if (this.disabled) return;
 
@@ -207,8 +253,22 @@ submitOrder.onclick = async function () {
       body: formData
     });
 
+    // ✅ بعد الإرسال: إعادة الصفحة للوضع الافتراضي
     this.innerText = "✅ تم إرسال الطلب";
     this.style.background = "#28a745";
+
+    // مسح البيانات بعد ثانيتين وإخفاء القسم
+    setTimeout(() => {
+      searchInput.value = "";
+      itemCode.value = "";
+      quantity.value = "";
+      price.value = "";
+      orderSection.style.display = "none";
+      result.innerHTML = "";
+      this.disabled = false;
+      this.innerText = "إرسال الطلب";
+      this.style.background = "#ff0000";
+    }, 2000);
 
   } catch (e) {
     this.innerText = "❌ فشل الإرسال";
